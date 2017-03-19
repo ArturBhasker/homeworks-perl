@@ -6,6 +6,7 @@ use warnings;
 use utf8;
 #use open qw(:std :utf8);
 use Encode qw(encode decode);
+#binmode STDOUT, ":encoding(UTF-8)";
 
 =encoding UTF8
 
@@ -54,9 +55,7 @@ sub anagram {
 		my $word = decode("utf8",$words{$_});
 		$word = lc $word;
 		my @symbs;
-		for my $i (0..(length $word)-1){
-			push @symbs,substr($word,$i,1);
-		}
+		my @symbs = split '', $word;
 		$symbols{$_} = \@symbs;
 		push @dictionary,$word;
 		@symbs = sort @symbs;
@@ -65,20 +64,17 @@ sub anagram {
 		
 	}
 	@dictionary = sort @dictionary;
-	for (@dictionary){
-		$_ = encode("utf8",$_);
-	}
+	@dictionary = map { encode("utf8",$_) } @dictionary;
 	
-	for (0..length @dictionary-1){
-		if ($dictionary[$_+1] eq $dictionary[$_]){
-			splice(@dictionary,$_,1);
-			$_--;
-		}
-	}
+	
+	my %uniq;
+	@dictionary = grep { !$uniq{$_}++ } @dictionary;
+	
 	for my $ch_word (@dictionary){
 		checking: for my $main_word (@dictionary){
-			join @{$anagrams{$ch_word}};
-			if (@{$anagrams{$main_word}} == @{$anagrams{$ch_word}}){
+			my $main = $anagrams{$main_word};
+			my $check = $anagrams{$ch_word};
+			if (encode("utf8",join "",@$main) eq encode("utf8",join "",@$check)){
 				push @{$result{$main_word}},$ch_word;
 				last checking;
 			}
@@ -87,7 +83,6 @@ sub anagram {
 	}
 	for(keys %result){  
 		if (not defined @{$result{$_}}[1]){
-				say $result{$_};
 				delete $result{$_};
 		}
 	}
