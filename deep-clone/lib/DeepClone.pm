@@ -36,85 +36,111 @@ use warnings;
 
 
 sub clone {
+	#say "start";
 	my $orig = shift;
+	my @refs = shift;
 	my $main = shift;
+	my $do = 1;
 	my $cloned;
 	if (not ref $orig) {
      		$cloned = $orig;
+		#say ref $orig;
 	}
 	elsif(ref $orig eq "ARRAY"){
-		for (0..$#$orig)	{
-			if (ref $$orig[$_] eq "ARRAY"){
-				if ($$orig[$_] eq $orig){
-					$$cloned[$_] = $cloned;
-				}
-				else{
-					push @$cloned,clone($$orig[$_],1);
+		if($refs[0]){
+			push @refs,$orig;
+			#say join ",",@refs;
+		}
+		else{
+			$refs[0] = $orig;
+			#say @refs;
+		}
+		for my $i (0..$#$orig)	{
+			for(@refs){
+				if(defined $$orig[$i] and defined $_){
+					#print $$orig[$i];
+					if($$orig[$i] eq $_){
+						$do = 0;
+					}	
 				}
 			}
-			else{	
-				my $t = clone($$orig[$_],1);
-				if(defined $t){
-					if(clone($$orig[$_],1) eq "9_DES"){
-						$cloned = "9_DES";
-					}
-					else{
-						push @$cloned,clone($$orig[$_],1);	
+			if($do){
+				$$cloned[$i] = clone($$orig[$i],@refs,1);
+				if (defined clone($$orig[$i],@refs,1)){
+					if ((ref clone($$orig[$i],@refs,1) ne "ARRAY") and (ref clone($$orig[$i],@refs,1) ne "HASH") and (ref clone($$orig[$i],@refs,1))){
+						#say "ttt $cloned";
+						$cloned = clone($$orig[$i],@refs,1);
+						#say $cloned;
+						last;
 					}
 				}
-				else{
-					push @$cloned,clone($$orig[$_],1);	
-				}
+			}
+			else{
+				$$cloned[$i] = $$orig[$i];
 			}
 		}
+		#say $cloned;	
 		#map {push @$cloned,clone($_)} @$orig;
 	}
 	elsif (ref $orig eq "HASH") {
-		#say "HASH!";
-		for (keys %$orig){
-			if (ref $$orig{$_} eq "HASH"){
-				if ($$orig{$_} eq $orig){
-					$$cloned{$_} = $cloned;
-				}
-				else{
-					$$cloned{$_} = clone($orig->{$_},1);
+		if($refs[0]){
+			push @refs,$orig;
+			#say join ",",@refs;
+		}
+		else{
+			$refs[0] = $orig;
+			#say @refs;
+		}
+		
+		for my $i (keys %$orig){
+			for(@refs){
+				if(defined $$orig{$i} and defined $_){
+					#print $$orig[$i];
+					if($$orig{$i} eq $_){
+						$do = 0;
+					}	
 				}
 			}
-			else{	
-				my $t = clone($$orig{$_},1);
-				#say defined $t;
-				if(defined $t){
-					if($t eq "9_DES" and ref $cloned eq "HASH"){
-						$cloned = "9_DES";
+			if($do){
+				$$cloned{$i} = clone($$orig{$i},@refs,1);
+				if (defined $$orig{$i}){
+				#say $$orig{$i};
+				#say $$orig{$i};
+					if ((ref clone($$orig{$i},@refs,1) ne "ARRAY") and (ref clone($$orig{$i},@refs,1) ne "HASH") and (ref clone($$orig{$i},@refs,1))){
+						#delete $cloned;
+						$cloned = clone($$orig{$i},@refs,1);
+						#say $cloned;
+						last;
 					}
-					else{
-						$$cloned{$_} = clone($orig->{$_},1);
-					}		
-				}
-				else{
-					$$cloned{$_} = clone($orig->{$_},1);
-				}
+				}	
 			}
-			
-		} 
+			else{
+				$$cloned{$i} = $$orig{$i};
+			}
+		}
+		#say $cloned;
+		#say %$cloned;
+		#say values %$cloned; 
 		#map {$$cloned{$_} = clone($orig->{$_})} keys %$orig;
 		
 	}
 	else{
-		$cloned = "9_DES";
+			
+		$cloned = $orig;
 	}
-	if(defined $cloned){
-		if($cloned eq "9_DES" and !$main)
-		{	
-			$cloned = undef;
+	if(defined $cloned and !$main){
+#			if (ref $cloned eq "CODE"){
+			if((ref $cloned ne "ARRAY") and (ref $cloned ne "HASH") and (ref $cloned)){	
+				$cloned = undef;
+			}
 		}
-	}
 	else{
-		if(!$main)
-		{	
+		if(!$main){	
 			$cloned = undef;
 		}
-	}	
+	}
+#	say $cloned;
+		
 	# ...
 	# deep clone algorith here
 	# ...
